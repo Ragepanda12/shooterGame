@@ -3,6 +3,7 @@ from pygame.locals import *
  
 WIDTH, HEIGHT = 800, 800
 RELOAD_SPEED = 500
+MULTISHOT_TIMER = 50
 DEFAULT_MISSILES = 5
 BLACK = (0, 0, 0)
 YELLOW = pygame.Color("yellow")
@@ -23,6 +24,8 @@ class PlayerOne():
         self.reloaded = True
         self.reloadTime = RELOAD_SPEED
         self.numBullets = DEFAULT_MISSILES 
+        self.multishotTimer = MULTISHOT_TIMER
+        self.multishotCheck = False
     def draw(self):
         if self.health > 0:
             screen.blit(self.image, self.rect)
@@ -38,8 +41,14 @@ class PlayerOne():
                 self.reloaded = True
                 self.reloadTime = RELOAD_SPEED
                 self.numBullets = DEFAULT_MISSILES
-        if keys[K_SPACE] and self.reloaded == True:
+        if self.multishotCheck == True:
+            self.multishotTimer -= 1
+            if self.multishotTimer == 0:
+                self.multishotTimer = MULTISHOT_TIMER
+                self.multishotCheck = False
+        if keys[K_SPACE] and self.reloaded == True and self.multishotCheck == False:
             self.numBullets -= 1
+            self.multishotCheck = True
             objects.append(BulletOne(self.rect.centerx, self.rect.top))    # new
             if self.numBullets == 0:
                 self.reloaded = False
@@ -57,7 +66,8 @@ class PlayerTwo():
         self.reloaded = True
         self.reloadTime = RELOAD_SPEED 
         self.numBullets = DEFAULT_MISSILES    
-
+        self.multishotCheck = False
+        self.multishotTimer = MULTISHOT_TIMER
     def draw(self):
         if self.health > 0:
             screen.blit(self.image, self.rect)
@@ -73,8 +83,14 @@ class PlayerTwo():
                 self.reloaded = True
                 self.reloadTime = RELOAD_SPEED
                 self.numBullets = DEFAULT_MISSILES
-        if keys[K_w] and self.reloaded == True:
+        if self.multishotCheck == True:
+            self.multishotTimer -= 1
+            if self.multishotTimer == 0:
+                self.multishotTimer = MULTISHOT_TIMER
+                self.multishotCheck = False
+        if keys[K_w] and self.reloaded == True and self.multishotCheck == False:
             self.numBullets -= 1
+            self.multishotCheck = True
             objects.append(BulletTwo(self.rect.centerx, self.rect.top))    # new
             if self.numBullets == 0:
                 self.reloaded = False
@@ -155,7 +171,13 @@ Playertwo = PlayerTwo()
 objects = []                                                            # new
 #for x in range(3):
 #    enemies.append(Enemy()) 
- 
+pygame.font.init()
+myfont = pygame.font.SysFont("monospace", 15, bold=False, italic=False)
+startText = myfont.render("Game Start!", 1, (255,255,0))
+screen.blit(startText, (WIDTH/2, HEIGHT/2))
+pygame.display.update()
+pygame.time.delay(2000)
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
