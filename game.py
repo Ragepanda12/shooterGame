@@ -1,10 +1,14 @@
 import pygame, os, random
 from pygame.locals import *
+from random import randint
  
 WIDTH, HEIGHT = 800, 800
 RELOAD_SPEED = 500
 MULTISHOT_TIMER = 50
 DEFAULT_MISSILES = 5
+SHIELD_TIME = 1500
+SHIELD_RELOAD_TIME = 10000
+POWERUP_DELAY = 10000
 BLACK = (0, 0, 0)
 YELLOW = pygame.Color("yellow")
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -16,7 +20,7 @@ class PlayerOne():
         self.speed = 6
         self.health = 100  
         basepath = os.path.dirname(__file__)
-        imagepath = os.path.join(basepath, "ship2.png")
+        imagepath = os.path.join(basepath, "ship2mini.png")
         self.image = pygame.image.load(imagepath)
         self.rect = self.image.get_rect()
         self.rect.bottom = HEIGHT - 100
@@ -46,7 +50,7 @@ class PlayerOne():
             if self.multishotTimer == 0:
                 self.multishotTimer = MULTISHOT_TIMER
                 self.multishotCheck = False
-        if keys[K_SPACE] and self.reloaded == True and self.multishotCheck == False:
+        if keys[K_UP] and self.reloaded == True and self.multishotCheck == False:
             self.numBullets -= 1
             self.multishotCheck = True
             objects.append(BulletOne(self.rect.centerx, self.rect.top))    # new
@@ -55,10 +59,10 @@ class PlayerOne():
             
 class PlayerTwo():
     def __init__(self):
-        PlayerTwo.speed = 6
-        PlayerTwo.health = 100  
+        self.speed = 6
+        self.health = 100  
         basepath = os.path.dirname(__file__)
-        imagepath = os.path.join(basepath, "ship2Flip.png")
+        imagepath = os.path.join(basepath, "ship2Flipmini.png")
         PlayerTwo.image = pygame.image.load(imagepath)
         PlayerTwo.rect = self.image.get_rect()
         self.rect.top = 100
@@ -73,6 +77,8 @@ class PlayerTwo():
             screen.blit(self.image, self.rect)
     
     def think(self):
+        if self.health <= 0:
+            Playertwo = None
         if keys[K_a] and self.rect.left > 0:
             self.rect.left -= self.speed
         elif keys[K_d] and self.rect.right < WIDTH:
@@ -113,6 +119,8 @@ class BulletOne():                                                         # new
             Playertwo.health -= 100
             if self in objects:
                 objects.remove(self)
+            if Playertwo.health < 0 and Playertwo in players:
+                players.remove(Playertwo)
                 
                 
     def draw(self):
@@ -138,10 +146,30 @@ class BulletTwo():                                                         # new
             Playerone.health -= 100
             if self in objects:
                 objects.remove(self)
-             
+            if(Playerone.health < 0 and Playerone in players):
+                players.remove(Playerone)
+                playerone = None
     def draw(self):
         screen.blit(self.image, self.rect)
         
+class powerUp():
+    def __init__(self):
+        objects.append(self)
+        self.speed = 0
+        basepath = os.path.dirname(__file__)
+        imagepath = os.path.join(basepath, "ship5mini.png")
+        self.image = pygame.image.load(imagepath)
+        self.rect = self.image.get_rect()
+        self.rect.centery = pygame.Surface(screen.get_size()).get_rect().centery
+    def think(self):
+        if self.rect.left > WIDTH:
+            self.rect.left -= self.speed
+        else:
+            self.rect.left += self.speed
+    def draw(self):
+        screen.blit(self.image, self.rect)    
+     
+
 class Enemy():
     def __init__(self):
         enemies.append(self)
@@ -168,13 +196,17 @@ class Enemy():
 Playerone = PlayerOne()
 Playertwo = PlayerTwo()
 #enemies = []
-objects = []                                                            # new
+objects = []
+players = [Playerone, Playertwo]
 #for x in range(3):
 #    enemies.append(Enemy()) 
 pygame.font.init()
 myfont = pygame.font.SysFont("monospace", 15, bold=False, italic=False)
 startText = myfont.render("Game Start!", 1, (255,255,0))
-screen.blit(startText, (WIDTH/2, HEIGHT/2))
+textpos = startText.get_rect()
+textpos.centerx = pygame.Surface(screen.get_size()).get_rect().centerx
+textpos.centery = pygame.Surface(screen.get_size()).get_rect().centery
+screen.blit(startText, textpos)
 pygame.display.update()
 pygame.time.delay(2000)
 
@@ -183,9 +215,13 @@ while True:
         if event.type == pygame.QUIT:
             quit()
     keys = pygame.key.get_pressed()
-     
-    Playerone.think()
-    Playertwo.think()
+
+    if(pygame.time.get_ticks() % 1000 == 0):
+        rngesus = randint(0, 9)
+        if(rngesus < 3):
+            powah = powerUp()
+    #Playerone.think()
+    #Playertwo.think()
     #for enemy in enemies:
     #    enemy.think()
      
@@ -194,9 +230,12 @@ while True:
     for object in objects:                                              # new
         object.think()                                                  # new
         object.draw()                                                   # new
-     
-    Playerone.draw()
-    Playertwo.draw()
+    for object in players:
+        if(object != None):
+            object.think()
+            object.draw()
+    #Playerone.draw()
+    #Playertwo.draw()
     #for enemy in enemies:
     #    enemy.draw()
     pygame.display.update()
