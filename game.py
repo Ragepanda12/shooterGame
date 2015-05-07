@@ -9,6 +9,8 @@ DEFAULT_MISSILES = 5
 SHIELD_TIME = 1500
 SHIELD_RELOAD_TIME = 10000
 POWERUP_DELAY = 10000
+MISSILE_DAMAGE = 20
+DEFAULT_POWERUP_STATE = True
 BLACK = (0, 0, 0)
 YELLOW = pygame.Color("yellow")
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -30,6 +32,9 @@ class PlayerOne():
         self.numBullets = DEFAULT_MISSILES 
         self.multishotTimer = MULTISHOT_TIMER
         self.multishotCheck = False
+        self.hasUnlimShotPower = DEFAULT_POWERUP_STATE
+        self.unlimShotMode = False
+        self.powerUpTimer = 0
     def draw(self):
         if self.health > 0:
             screen.blit(self.image, self.rect)
@@ -51,12 +56,20 @@ class PlayerOne():
                 self.multishotTimer = MULTISHOT_TIMER
                 self.multishotCheck = False
         if keys[K_UP] and self.reloaded == True and self.multishotCheck == False:
-            self.numBullets -= 1
-            self.multishotCheck = True
-            objects.append(BulletOne(self.rect.centerx, self.rect.top))    # new
-            if self.numBullets == 0:
-                self.reloaded = False
-            
+            if self.unlimShotMode == False:
+                self.numBullets -= 1
+                self.multishotCheck = True
+                objects.append(BulletOne(self.rect.centerx, self.rect.top))
+                if self.numBullets == 0:
+                    self.reloaded = False
+            else:
+                objects.append(BulletOne(self.rect.centerx, self.rect.top))               
+        if keys[K_LSHIFT] and self.hasUnlimShotPower == True:
+            self.unlimShotMode = True
+            self.powerUpTimer = pygame.time.get_ticks()
+        if self.unlimShotMode == True:
+            if pygame.time.get_ticks() - self.powerUpTimer >= 5000:
+                self.unlimShotMode = False
 class PlayerTwo():
     def __init__(self):
         self.speed = 6
@@ -116,12 +129,12 @@ class BulletOne():                                                         # new
         if self.rect.bottom < 0:
             objects.remove(self)
         if self.rect.colliderect(Playertwo.rect):
-            Playertwo.health -= 100
+            Playertwo.health -= MISSILE_DAMAGE
             if self in objects:
                 objects.remove(self)
             if Playertwo.health < 0 and Playertwo in players:
                 players.remove(Playertwo)
-                
+
                 
     def draw(self):
         screen.blit(self.image, self.rect)
@@ -143,7 +156,7 @@ class BulletTwo():                                                         # new
         if self.rect.top < 0:
             objects.remove(self)
         if self.rect.colliderect(Playerone.rect):
-            Playerone.health -= 100
+            Playerone.health -= MISSILE_DAMAGE
             if self in objects:
                 objects.remove(self)
             if(Playerone.health < 0 and Playerone in players):
@@ -152,20 +165,31 @@ class BulletTwo():                                                         # new
     def draw(self):
         screen.blit(self.image, self.rect)
         
-class powerUp():
+"""class powerUp():
     def __init__(self):
         objects.append(self)
-        self.speed = 0
+        self.speed = 6
         basepath = os.path.dirname(__file__)
         imagepath = os.path.join(basepath, "ship5mini.png")
         self.image = pygame.image.load(imagepath)
         self.rect = self.image.get_rect()
         self.rect.centery = pygame.Surface(screen.get_size()).get_rect().centery
+        self.moveLeft = False;
     def think(self):
-        if self.rect.left > WIDTH:
+        if(self.moveLeft):
+            if self.rect.left == 0:
+                self.moveLeft = False
             self.rect.left -= self.speed
         else:
-            self.rect.left += self.speed
+            self.rect.right += self.speed
+            if self.rect.right == WIDTH:
+                self.moveLeft = True
+        if self.rect.colliderect(BulletOne.rect):
+            Playerone.unlimShotMode = True
+            objects.remove(self)
+        elif self.rect.colliderect(BulletTwo.rect):
+            Playertwo.unlimShotMode = True
+            objects.remove(self)
     def draw(self):
         screen.blit(self.image, self.rect)    
      
@@ -192,7 +216,7 @@ class Enemy():
      
     def draw(self):
         screen.blit(self.image, self.rect)
- 
+ """
 Playerone = PlayerOne()
 Playertwo = PlayerTwo()
 #enemies = []
@@ -215,11 +239,11 @@ while True:
         if event.type == pygame.QUIT:
             quit()
     keys = pygame.key.get_pressed()
-
-    if(pygame.time.get_ticks() % 1000 == 0):
+    screen.fill((0,0,0))
+    """if(pygame.time.get_ticks() % 1000 == 0):
         rngesus = randint(0, 9)
-        if(rngesus < 3):
-            powah = powerUp()
+        if(rngesus < 10):
+            powah = powerUp()"""
     #Playerone.think()
     #Playertwo.think()
     #for enemy in enemies:
@@ -229,7 +253,7 @@ while True:
      
     for object in objects:                                              # new
         object.think()                                                  # new
-        object.draw()                                                   # new
+        object.draw()                                                   # newme
     for object in players:
         if(object != None):
             object.think()
